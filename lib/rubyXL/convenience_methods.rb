@@ -214,11 +214,16 @@ module RubyXL
       when nil then # No shifting at all
       when :right then
         sheet_data.rows[row].insert_cell_shift_right(nil, col)
+        merged_cells.update_after(:insert_cell, [row, col], :right) if self.merged_cells
+        workbook.calculation_chain.update_after(:insert_cell, [row, col, sheet_id], :right) if workbook.calculation_chain
       when :down then
         add_row(sheet_data.size, :cells => Array.new(sheet_data.rows[row].size))
         (sheet_data.size - 1).downto(row+1) { |index|
           sheet_data.rows[index].cells[col] = sheet_data.rows[index-1].cells[col]
         }
+
+        merged_cells.update_after(:insert_cell, [row, col], :down) if self.merged_cells
+        workbook.calculation_chain.update_after(:insert_cell, [row, col, sheet_id], :down) if workbook.calculation_chain
       else
         raise 'invalid shift option'
       end
@@ -242,11 +247,16 @@ module RubyXL
         row.cells[column_index] = nil if row
       when :left then
         row.delete_cell_shift_left(column_index) if row
+        merged_cells.update_after(:delete_cell, [row_index, column_index], :left) if self.merged_cells
+        workbook.calculation_chain.update_after(:delete_cell, [row_index, column_index, sheet_id], :left) if workbook.calculation_chain
       when :up then
         (row_index...(sheet_data.size - 1)).each { |index|
           c = sheet_data.rows[index].cells[column_index] = sheet_data.rows[index + 1].cells[column_index]
           c.row -= 1 if c.is_a?(Cell)
         }
+
+        merged_cells.update_after(:delete_cell, [row_index, column_index], :up) if self.merged_cells
+        workbook.calculation_chain.update_after(:delete_cell, [row_index, column_index, sheet_id], :up) if workbook.calculation_chain
       else
         raise 'invalid shift option'
       end
@@ -291,6 +301,8 @@ module RubyXL
         }
       }
 
+      merged_cells.update_after(:insert_row, [row_index, nil]) if self.merged_cells
+      workbook.calculation_chain.update_after(:insert_row, [row_index, nil, sheet_id]) if workbook.calculation_chain
       return new_row
     end
 
@@ -306,6 +318,8 @@ module RubyXL
         row && row.cells.each{ |c| c.row -= 1 unless c.nil? }
       }
 
+      merged_cells.update_after(:delete_row, [row_index, nil]) if self.merged_cells
+      workbook.calculation_chain.update_after(:delete_row, [row_index, nil, sheet_id]) if workbook.calculation_chain
       return deleted
     end
 
@@ -335,6 +349,8 @@ module RubyXL
 
       cols.insert_column(column_index)
 
+      merged_cells.update_after(:insert_column, [nil, column_index]) if self.merged_cells
+      workbook.calculation_chain.update_after(:insert_column, [nil, column_index, sheet_id]) if workbook.calculation_chain
       # TODO: update column numbers
     end
 
@@ -353,6 +369,8 @@ module RubyXL
       }
 
       cols.each { |range| range.delete_column(column_index) }
+      merged_cells.update_after(:delete_column, [nil, column_index]) if self.merged_cells
+      workbook.calculation_chain.update_after(:delete_column, [nil, column_index, sheet_id]) if workbook.calculation_chain
     end
 
     def get_row_style(row_index)

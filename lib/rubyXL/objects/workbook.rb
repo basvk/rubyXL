@@ -7,6 +7,7 @@ require 'rubyXL/objects/theme'
 require 'rubyXL/objects/calculation_chain'
 require 'rubyXL/objects/worksheet'
 require 'rubyXL/objects/chartsheet'
+require 'rubyXL/objects/merged_cells'
 require 'rubyXL/objects/relationships'
 require 'rubyXL/objects/simple_types'
 require 'rubyXL/objects/extensions'
@@ -459,5 +460,4 @@ module RubyXL
 
     include WorkbookConvenienceMethods
   end
-
 end

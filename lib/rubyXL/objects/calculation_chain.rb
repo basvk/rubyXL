@@ -27,5 +27,106 @@ module RubyXL
     def xlsx_path
       ROOT.join('xl', 'calcChain.xml')
     end
+
+    def update_after(action, position, direction = nil)
+      row      = position[0]
+      col      = position[1]
+      sheet_id = position[2]
+
+      case action
+      when :insert_row
+        cells.each { |calc_chain_cell|
+          next if calc_chain_cell.sheet_id != sheet_id
+          ref = calc_chain_cell.ref
+          next if ref.first_row < row
+          calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row + 1, ref.first_col)
+        }
+      when :delete_row
+        calc_chain_cells_to_remove = []
+
+        cells.each { |calc_chain_cell|
+          next if calc_chain_cell.sheet_id != sheet_id
+          ref = calc_chain_cell.ref
+          next if ref.first_row < row
+
+          if ref.first_row == row
+            calc_chain_cells_to_remove << calc_chain_cell
+          else
+            calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row - 1, ref.first_col)
+          end
+        }
+
+        cells.reject! { |calc_chain_cell| calc_chain_cells_to_remove.include?(calc_chain_cell) }
+      when :insert_column
+        cells.each { |calc_chain_cell|
+          next if calc_chain_cell.sheet_id != sheet_id
+          ref = calc_chain_cell.ref
+          next if ref.first_col < col
+          calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row, ref.first_col + 1)
+        }
+      when :delete_column
+        calc_chain_cells_to_remove = []
+
+        cells.each { |calc_chain_cell|
+          next if calc_chain_cell.sheet_id != sheet_id
+          ref = calc_chain_cell.ref
+          next if ref.first_col < col
+
+          if ref.first_col == col
+            calc_chain_cells_to_remove << calc_chain_cell
+          else
+            calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row, ref.first_col - 1)
+          end
+        }
+
+        cells.reject! { |calc_chain_cell| calc_chain_cells_to_remove.include?(calc_chain_cell) }
+      when :insert_cell
+        if direction == :right
+          cells.each { |calc_chain_cell|
+            next if calc_chain_cell.sheet_id != sheet_id
+            ref = calc_chain_cell.ref
+            next if ref.first_row != row || ref.first_col < col
+            calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row, ref.first_col + 1)
+          }
+        elsif direction == :down
+          cells.each { |calc_chain_cell|
+            next if calc_chain_cell.sheet_id != sheet_id
+            ref = calc_chain_cell.ref
+            next if ref.first_row < row || ref.first_col != col
+            calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row + 1, ref.first_col)
+          }
+        end
+      when :delete_cell
+        calc_chain_cells_to_remove = []
+
+        if direction == :left
+          cells.each { |calc_chain_cell|
+            next if calc_chain_cell.sheet_id != sheet_id
+            ref = calc_chain_cell.ref
+            next if ref.first_row != row || ref.first_col < col
+
+            if ref.first_col == col
+              calc_chain_cells_to_remove << calc_chain_cell
+            else
+              calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row, ref.first_col - 1)
+            end
+          }
+        elsif direction == :up
+          cells.each { |calc_chain_cell|
+            next if calc_chain_cell.sheet_id != sheet_id
+            ref = calc_chain_cell.ref
+            next if ref.first_row < row || ref.first_col != col
+
+            if ref.first_row == row
+              calc_chain_cells_to_remove << calc_chain_cell
+            else
+              calc_chain_cell.ref = RubyXL::Reference.new(ref.first_row - 1, ref.first_col)
+            end
+          }
+        end
+
+        cells.reject! { |calc_chain_cell| calc_chain_cells_to_remove.include?(calc_chain_cell) }
+      end
+    end
   end
 end
